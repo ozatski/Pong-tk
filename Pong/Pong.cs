@@ -25,112 +25,50 @@ namespace Pong
         private Vector2 _lastMousePos;
         private bool _firstMove = true;
         private Camera _camera;
+        private Cube _cube;
+        private Cube _cube2;
+        private Matrix4 model2;
 
-
-
-        //Rendera cube 6 faces * 2 tringles * 3 vertices
-        private readonly float[] _vertices =
-        {
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-                 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-                -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-                -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-        };
-
- 
-        private uint[] _indices = {  // note that we start from 0!
-            0, 1, 3,   // first triangle
-            1, 2, 3    // second triangle
-        };
         
         protected override void OnLoad()
         {
             base.OnLoad();
 
-       
             GL.Enable(EnableCap.DepthTest);
 
+            //Initialize VAO
             _vertexArrayObject = GL.GenVertexArray();
             GL.BindVertexArray(_vertexArrayObject);
 
             //Initialize VertexBuffer
             _vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
-      
+     
             //Initialize EBO 
-
             _elementBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
-            GL.BufferData(BufferTarget.ElementArrayBuffer, _indices.Length * sizeof(uint), _indices, BufferUsageHint.StaticDraw);
-
+          
+            //Create and compile shaders
             _shader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
-
-            _shader.Use();
-
-
-            var vertexLocation = _shader.GetAttribLocation("aPosition");
-            GL.EnableVertexAttribArray(vertexLocation);
-            //  Set vertex attributes pointers
-            GL.VertexAttribPointer(vertexLocation, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
-        
-
-            int texCoordLocation = _shader.GetAttribLocation("aTexCoord");
-            GL.EnableVertexAttribArray(texCoordLocation);
-            GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));        
-
             _texture = Texture.LoadFromFile("Resources/container.png");
-            _texture.Use(TextureUnit.Texture0);
             _texture2 = Texture.LoadFromFile("Resources/awesomeface.png");
-            _texture2.Use(TextureUnit.Texture1);
 
-            _shader.SetInt("texture1", 0);
-            _shader.SetInt("texture2", 1);
+            _cube = new Cube(_shader);
+            
+            _cube.addTexture(_texture, "Texture0", 0, "texture1");
+            _cube.addTexture(_texture2, "Texture1", 1, "texture2");
 
+            _cube2 = new Cube(_shader);
+            _cube2.addTexture(_texture, "Texture0", 0, "texture1");
+            _cube2.addTexture(_texture2, "Texture1", 1, "texture2");
+
+            // Set the transformation for the second cube
+             model2 = Matrix4.CreateTranslation(new Vector3(3.0f, 0.0f, -1.0f)); // Example translation
+            _cube2.SetModelMatrix(model2);
 
             _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
 
-
             CursorState = CursorState.Grabbed;
-
-
 
         }
 
@@ -142,33 +80,30 @@ namespace Pong
 
         }
 
-
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
+            // Set _time using time since last rendered fram * 4 as spinning speed
             _time += 4.0 * e.Time;
 
-
+            // Clear the color and depth buffer
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
  
+            //Spin the first cube over time
+            _cube.SetModelMatrix(Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time)));
+            
+            // Render the first cube
+            _cube.Render();
+          
+            // Render the second cube
+            _cube2.Render();
 
-            _texture.Use(TextureUnit.Texture0);
-            _texture2.Use(TextureUnit.Texture1);
-            _shader.Use();
-
-
-            var model = Matrix4.Identity * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(_time));
-
-
-            _shader.SetMatrix4("model", model);
+            // Update the view matrix and projection matrix
             _shader.SetMatrix4("view", _camera.GetViewMatrix());
             _shader.SetMatrix4("projection", _camera.GetProjectionMatrix());
 
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-   
+            // Swap the front/back buffers so what we just rendered to the back buffer is displayed in the window
             SwapBuffers();
-
-
         }
 
 
@@ -190,8 +125,10 @@ namespace Pong
                 Close();
             }
 
+            //Camera movement 
             if(input.IsKeyDown(Keys.W))
             {
+                // Move the camera forward relative to its current rotation based on the time since last frame.
                 _camera.Position += _camera.Front * _cameraSpeed * (float)e.Time; // Forward
             }
 
@@ -222,7 +159,6 @@ namespace Pong
 
             //Mouse movement
             
-            
             if (_firstMove)
             {
                _lastMousePos = new Vector2(mouse.X, mouse.Y);
@@ -234,7 +170,7 @@ namespace Pong
                 var deltaY = mouse.Y - _lastMousePos.Y;
                 _lastMousePos = new Vector2(mouse.X, mouse.Y);
 
-
+                //Set the camera yaw and pitch based on mouse movement
                 _camera.Yaw += deltaX * _mouseSensitivity;
                 _camera.Pitch -= deltaY * _mouseSensitivity;
      
